@@ -4,7 +4,7 @@ defmodule RtTaskBoard.MixProject do
   def project do
     [
       app: :rt_task_board,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -15,7 +15,8 @@ defmodule RtTaskBoard.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {RTTaskBoard.Application, []} # <- start our supervision tree
     ]
   end
 
