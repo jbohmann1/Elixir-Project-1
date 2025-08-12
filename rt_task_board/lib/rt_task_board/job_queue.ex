@@ -5,7 +5,7 @@ defmodule RTTaskBoard.JobQueue do
   """
 
   use GenServer
-  alias RTTaskBoard.{Job, Workers}
+  alias RTTaskBoard.{Job, Workers, Events}
 
   @name __MODULE__
   @max_concurrency 4
@@ -100,6 +100,9 @@ defmodule RTTaskBoard.JobQueue do
       |> Map.merge(%{status: :completed, last_error: nil, finished_at: now, updated_at: now, result: result})
 
     state = %{state | running: running, jobs: Map.put(state.jobs, id, job)}
+
+    Events.broadcast(:job_updated, job)
+
     {:noreply, maybe_start_more(state)}
   end
 
@@ -114,10 +117,16 @@ defmodule RTTaskBoard.JobQueue do
       new_job = %{job | status: :pending, attempts: attempts + 1, last_error: inspect(reason), updated_at: now, finished_at: now}
       state = %{state | running: running, jobs: Map.put(state.jobs, id, new_job)}
       Process.send_after(self(), {:retry_job, id}, backoff)
+
+      Events.broadcast(:job_updated, new_job)
+
       {:noreply, state}
     else
       new_job = %{job | status: :failed, attempts: attempts + 1, last_error: inspect(reason), updated_at: now, finished_at: now}
       state = %{state | running: running, jobs: Map.put(state.jobs, id, new_job)}
+
+      Events.broadcast(:job_updated, new_job)
+
       {:noreply, maybe_start_more(state)}
     end
   end
@@ -186,7 +195,11 @@ defmodule RTTaskBoard.JobQueue do
   defp start_job(state, %Job{} = job) do
     now = DateTime.utc_now()
     job = %{job | status: :running, started_at: now, updated_at: now}
+
+    Events.broadcast(:job_updated, job)
+
     parent = self()
+
     task_fun = fn ->
       result =
         try do
@@ -198,7 +211,7 @@ defmodule RTTaskBoard.JobQueue do
           :throw, term -> {:error, {:throw, term}}
         end
 
-      send(self(), {:job_result, job.id, result})
+      send(parent, {:job_result, job.id, result})
     end
 
     {:ok, pid} = Task.Supervisor.start_child(RTTaskBoard.JobTaskSupervisor, task_fun)

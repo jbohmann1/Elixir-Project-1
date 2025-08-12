@@ -1,6 +1,6 @@
 defmodule RTTaskBoard.Store do
   use GenServer
-  alias RTTaskBoard.{Task, JobQueue}
+  alias RTTaskBoard.{Task, JobQueue, Events}
 
   @name __MODULE__
   @default_file "tasks.json"
@@ -49,6 +49,7 @@ defmodule RTTaskBoard.Store do
   @impl true
   def handle_call({:add, title, desc}, _from, state) do
     task = %Task{id: state.next_id, title: title, description: desc, status: "todo"}
+
     new_state =
       %{state | tasks: [task | state.tasks], next_id: state.next_id + 1}
       |> log(:add, %{id: task.id, title: title})
@@ -56,6 +57,8 @@ defmodule RTTaskBoard.Store do
 
     # enqueue background subtasks for this task
     _= JobQueue.enqueue_subtasks(task)
+
+    Events.broadcast(:task_added, task)
 
     {:reply, task, new_state}
   end
@@ -80,6 +83,11 @@ defmodule RTTaskBoard.Store do
     new_state =
       (if found, do: %{state | tasks: tasks} |> log(:done, %{id: id}), else: state)
       |> autosave_if(found)
+
+    if found do
+      updated = Enum.find(tasks, &(&1.id == id))
+      Events.broadcast(:task_updated, updated)
+    end
 
     {:reply, reply, new_state}
   end
