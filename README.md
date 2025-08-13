@@ -119,10 +119,10 @@ mix phx.new --version
 ### Stage 1: CLI App
 1. Create a new Elixir project:
    ```bash
-   mix new task_board
-   cd task_board
+   mix new rt_task_board
+   cd rt_task_board
    ```
-2. Define a `Task` struct and functions in `lib/task_board.ex`.
+2. Define a `Task` struct and functions in `lib/rt_task_board.ex`.
 3. Run the program:
    ```bash
    mix run
@@ -130,7 +130,7 @@ mix phx.new --version
 4. (Optional) Build as a CLI binary:
    ```bash
    mix escript.build
-   ./task_board
+   ./rt_task_board
    ```
 
 ---
@@ -147,7 +147,7 @@ mix phx.new --version
 ---
 
 ### Stage 3: Background Jobs
-1. Add a `TaskBoard.JobQueue` GenServer to enqueue jobs.
+1. Add a `RTTaskBoard.JobQueue` GenServer to enqueue jobs.
 2. Process jobs concurrently (e.g., with `Task.async_stream/3` or worker processes).
 3. Add retry logic and status tracking (pending/running/completed/failed).
 4. (Optional) Store a recent-activity log in ETS.
@@ -166,7 +166,7 @@ You can keep your Elixir app as the core **task engine** and create a Phoenix **
    mix phx.new task_board_web --no-ecto
    cd task_board_web
    ```
-2. In `mix.exs`, add your core app (`task_board`) as a dependency (path or umbrella). Example using a local path:
+2. In `mix.exs`, add your core app (`rt_task_board`) as a dependency (path or umbrella). Example using a local path:
    ```elixir
    defp deps do
      [
@@ -181,7 +181,7 @@ You can keep your Elixir app as the core **task engine** and create a Phoenix **
    mix deps.get
    ```
 3. Build LiveViews:
-   - A **Task List** LiveView that renders tasks from `TaskBoard.TaskServer`.
+   - A **Task List** LiveView that renders tasks from `RTTaskBoard.TaskServer`.
    - A **Form** to create/update tasks.
    - A **Job Activity** panel that subscribes to updates (Phoenix.PubSub or broadcasts from your GenServers).
 4. Start the Phoenix server:
@@ -202,9 +202,9 @@ By Stage 4 your app might look like this:
 ```
 TaskBoard.Application
 │
-├── TaskBoard.TaskServer (GenServer)
+├── RTTaskBoard.TaskServer (GenServer)
 │
-├── TaskBoard.JobQueue (GenServer)
+├── RTTaskBoard.JobQueue (GenServer)
 │
 ├── Phoenix.Endpoint (LiveView Web UI)
 │
